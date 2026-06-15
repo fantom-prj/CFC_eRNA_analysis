@@ -1,0 +1,17 @@
+set	count
+e_ncRNA_CGI	3415
+e_ncRNA_CGIap	2145
+e_ncRNA_CGInap	1270
+e_ncRNA_Null	15766
+e_ncRNA_TATA	1656
+e_ncRNA_TATALTR	685
+mRNA_CGI	4551
+mRNA_Null	2233
+mRNA_TATA	352
+other_ncRNA_CGI	55
+other_ncRNA_Null	3381
+other_ncRNA_TATA	528
+other_ncRNA_TATALTR	306
+p_ncRNA_CGI	5262
+p_ncRNA_Null	2432
+p_ncRNA_TATA	163
