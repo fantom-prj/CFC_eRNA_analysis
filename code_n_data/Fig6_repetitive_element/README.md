@@ -1,5 +1,4 @@
 # TATA box enhancer/eRNA enrichment with LTR, NFY/TEAD activating their transcription 
-<div style="text-align:center"><img src="figs/SALA.png" width="500"></div>
 
 * repetitive.R -> main code describing all the analyses
 * LTR_ex5.R -> associated code for LTR distribution across ex5_cluster
@@ -7,7 +6,7 @@
 * Results are presented in Fig.6 and ext_Fig9
 * Data is not included here, please refer to https://fantom.gsc.riken.jp/6/suppl/Yip_et_al_2026_CFC
 
-## Related Methods
+# Related Methods
 * [Repeat elements in ex5_clusters and transcript models](#repeat)
 * [Transcription factor motif enrichment](#TF)
 * [Integration of NFYB and TEAD4 ChIP-seq datasets](#NFY)
