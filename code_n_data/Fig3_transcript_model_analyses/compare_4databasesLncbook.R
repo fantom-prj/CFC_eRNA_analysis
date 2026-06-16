@@ -72,8 +72,13 @@ system("zcat table5pENST.bed12.bed.gz | bgzip > table5pENST.bed12.bed.bgz")
 system("tabix -p bed table5pENST.bed12.bed.bgz")
 
 #===============================================================================
+#run input preparation for SALA
+#refer to [primary_folder]/code_n_data/transcript_model_analyses_Fig3/SALA_compare_exisiting_databases/Compare_lncbook/input.sh
+#===============================================================================
+
+#===============================================================================
 #run transcript annotation of SALA
-#refer to [primary_folder]/code_n_data/transcript_model_analyses_Fig3/SALA_compare_exisiting_databases/Compare_lncbook/sala/transcript/script.sh
+#refer to [primary_folder]/code_n_data/transcript_model_analyses_Fig3/SALA_compare_exisiting_databases/Compare_lncbook/transcript.sh
 #===============================================================================
 
 read_info=read.delim(paste0(lncbook_path_log,"lncbook.Neuron_THP1.trnscpt.info.tsv.gz"), header=T, stringsAsFactors = F, check.names = F)
@@ -97,7 +102,7 @@ table5.info1=table5.info[,c(9,10,11,14,15)]
 write.table(table5.info1,paste0(CAT_path,"sala/gene/table5pENST.info.tsv"), col.names=F, row.names=F, sep="\t", quote=F)
 #===============================================================================
 #run gene annotation of SALA
-#refer to [primary_folder]/code_n_data/transcript_model_analyses_Fig3/SALA_compare_exisiting_databases/Compare_lncbook/sala/gene/script.10percent.sh
+#refer to [primary_folder]/code_n_data/transcript_model_analyses_Fig3/SALA_compare_exisiting_databases/Compare_lncbook/gene.sh
 #===============================================================================
 
 ONTlncbookgene.info=read.delim(paste0(lncbook_path,"sala/gene/Neuron_THP1_lncbook_disable_yes_10percent/log/Neuron_THP1_lncbook_disable_yes_10percent.model.info.tsv.gz"), header=T, stringsAsFactors = F, check.names = F)

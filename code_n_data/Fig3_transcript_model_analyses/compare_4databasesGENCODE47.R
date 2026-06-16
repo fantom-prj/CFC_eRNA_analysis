@@ -51,8 +51,13 @@ system("zcat table5pENST.bed12.bed.gz | bgzip > table5pENST.bed12.bed.bgz")
 system("tabix -p bed table5pENST.bed12.bed.bgz")
 
 #===============================================================================
+#run input preparation for SALA
+#refer to [primary_folder]/code_n_data/transcript_model_analyses_Fig3/SALA_compare_exisiting_databases/Compare_gencodev47/input.sh
+#===============================================================================
+
+#===============================================================================
 #run transcript annotation of SALA
-#refer to [primary_folder]/code_n_data/transcript_model_analyses_Fig3/SALA_compare_exisiting_databases/Compare_gencodev47/sala/transcript/script.sh
+#refer to [primary_folder]/code_n_data/transcript_model_analyses_Fig3/SALA_compare_exisiting_databases/Compare_gencodev47/transcript.sh
 #===============================================================================
 
 read_info=read.delim(paste0(gencode_path_log,"gencodev47.Neuron_THP1.trnscpt.info.tsv.gz"), header=T, stringsAsFactors = F, check.names = F)
@@ -76,7 +81,7 @@ write.table(table5.info1,paste0(CAT_path,"sala/gene/table5pENST.info.tsv"), col.
 
 #===============================================================================
 #run gene annotation of SALA
-#refer to [primary_folder]/code_n_data/transcript_model_analyses_Fig3/SALA_compare_exisiting_databases/Compare_gencodev47/sala/gene/script.10percent.sh
+#refer to [primary_folder]/code_n_data/transcript_model_analyses_Fig3/SALA_compare_exisiting_databases/Compare_gencodev47/sala/gene.sh
 #===============================================================================
 
 ONTgencodev47gene.info=read.delim(paste0(gencode_path,"sala/gene/Neuron_THP1_gencodev47_disable_yes_10percent/log/Neuron_THP1_gencodev47_disable_yes_10percent.model.info.tsv.gz"), header=T, stringsAsFactors = F, check.names = F)
