@@ -1,0 +1,775 @@
+---
+title: "Random forest training for 3'-end classification"
+output:
+  rmdformats::readthedown:
+    toc_float: true
+    highlight: kate
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(fig.align='center', dev = 'svg')
+require(GenomicRanges)
+require(GenomicFeatures)
+require(dplyr) 
+require(tidyr)
+require(ggplot2)
+require(Biostrings)
+require(rtracklayer)
+require(readr)
+require(stringr)
+require(caTools)
+require(ranger)
+require(patchwork)
+require(memes)
+require(gridExtra)
+source("code/rf_helpers.R")
+```
+
+# Input data 
+
+## Load reference annotation data and gencode data
+
+```{r load reference annotation and genome, message=FALSE, warning=FALSE}
+fastagenomegz <- "input/GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta"
+human_genome <- readDNAStringSet(fastagenomegz)
+chromosome_names <- names(human_genome)
+chromosome_sizes <- seqlengths(human_genome)
+#clean chromosome names
+for (i in seq_along(chromosome_names)) { 
+  chromosome_names[i] <- unlist(strsplit(chromosome_names[i], " "))[1]
+}
+names(human_genome) <- chromosome_names
+
+#load assembly
+all.ends <- read.csv("input/n3_Neuron_THP1_iPSchro_all_internal_priming_exclude_Gencode.tsv", header=T, sep="\t")
+colnames(all.ends)[1:6] <- c("chr","start","end","counts.1","counts.2","strand")
+
+# Convert to GRanges object, keep relevant metadata
+ends.custom.assembly.table1 <- GRanges(
+  seqnames = all.ends$chr,
+  ranges = IRanges(start = all.ends$end, end = all.ends$end),
+  strand = all.ends$strand,
+  metadata = DataFrame(all.ends[,c(5,7:10)])
+)
+rm(all.ends)
+
+#remove TES entries exceeding chromosome boundaries +/- 150 nt
+outofbound <- extend(ends.custom.assembly.table1, upstream = 150, downstream = 150)
+outofbound_index_end <- as.vector(which(end(outofbound) > seqlengths(human_genome)[as.character(seqnames(outofbound))]))
+outofbound_index_start <- which(start(outofbound) < 0)
+outofbound_index <- c(outofbound_index_end,outofbound_index_start)
+ends_trimmed <- ends.custom.assembly.table1[-outofbound_index]
+rm(outofbound, outofbound_index, outofbound_index_end, outofbound_index_start, ends.custom.assembly.table1)
+names(mcols(ends_trimmed)) <- gsub("metadata.", "", names(mcols(ends_trimmed)))
+
+#load gencode
+all.ends.gencode <- read.csv("input/n3_Gencode_internal_priming.tsv", header=T, sep="\t")
+colnames(all.ends.gencode)[1:6] <- c("chr","start","end","counts.1","counts.2","strand")
+# Convert to GRanges object, keep relevant metadata
+ends_trimmed.gencode <- GRanges(
+  seqnames = all.ends.gencode$chr,
+  ranges = IRanges(start = all.ends.gencode$end, end = all.ends.gencode$end),
+  strand = all.ends.gencode$strand,
+  metadata = DataFrame(all.ends.gencode[,c(5,7:10)])
+)
+rm(all.ends.gencode)
+#from gencode, no need to remove out of bound
+names(mcols(ends_trimmed.gencode)) <- gsub("metadata.", "", names(mcols(ends_trimmed.gencode)))
+
+```
+
+### Clustering of assembly 3'ends
+
+3'ends from assembly were clustered in windows of 5 nt, then the most distal 3'end was kept as the reference nucleotide of the cluster.  
+
+```{r, make clusters from assembly, message=FALSE, warning=FALSE}
+window = 0 #note tune parameter if want to reduce n. of 3' endby their proximity
+# Reduce the ranges
+reduced_gr <- reduce(ends_trimmed, min.gapwidth = window )
+reduced_gr$cluster_id <- paste0("clusterID_", 
+                                seqnames(reduced_gr), 
+                                ":", 
+                                start(reduced_gr),"-", end(reduced_gr),
+                                "|",
+                                strand(reduced_gr))
+three_prime_ends <- ifelse(strand(reduced_gr) == "+", end(reduced_gr), start(reduced_gr))
+three_prime_gr <- GRanges(
+  seqnames = seqnames(reduced_gr),
+  ranges = IRanges(
+    start = three_prime_ends,
+    width = 1
+  ),
+  strand = strand(reduced_gr)
+)
+three_prime_gr$cluster_id <- reduced_gr$cluster_id 
+
+a <- plotNucleotides(three_prime_gr, human_genome) + ggtitle("All ONT-CAGE")+guides(fill=guide_legend(title="Nt"))+ylim(0,1)+theme_bw()+theme(legend.title=element_blank())
+
+assembly_clusters <- three_prime_gr
+rm(three_prime_gr)
+
+#separately for gencode
+# Reduce the ranges
+reduced_gr.gencode <- reduce(ends_trimmed.gencode, min.gapwidth = window )
+reduced_gr.gencode$cluster_id <- paste0("clusterID_", 
+                                seqnames(reduced_gr.gencode), 
+                                ":", 
+                                start(reduced_gr.gencode),"-", end(reduced_gr.gencode),
+                                "|",
+                                strand(reduced_gr.gencode))
+three_prime_ends.gencode <- ifelse(strand(reduced_gr.gencode) == "+", end(reduced_gr.gencode), start(reduced_gr.gencode))
+three_prime_gr.gencode <- GRanges(
+  seqnames = seqnames(reduced_gr.gencode),
+  ranges = IRanges(
+    start = three_prime_ends.gencode,
+    width = 1
+  ),
+  strand = strand(reduced_gr.gencode)
+)
+three_prime_gr.gencode$cluster_id <- reduced_gr.gencode$cluster_id 
+
+b <- plotNucleotides(three_prime_gr.gencode, human_genome)+ ggtitle("Gencode")+guides(fill=guide_legend(title="Nt"))+ylim(0,1)+theme_bw()+theme(legend.title=element_blank())
+
+assembly_clusters.gencode <- three_prime_gr.gencode
+rm(three_prime_gr.gencode)
+
+```
+
+## Import reference data
+
+This is the data used for training the model, data comes from 1) FLAM-seq data + 3'-seq data in Human organoids (Alfonso-Gonzalez, C., et al., 2023) and FLAM-seq data from iPSC (Legnini, I., et al., 2019). 
+
+### Load poly(A) databases 
+
+### Prepare "neuronal" database (iPSC-derived cerebral organoids)
+
+```{r import polyA database, message=FALSE, warning=FALSE}
+path_neuronal_database <- "input/neuronal.gff"
+neuronal_database <- rtracklayer::import.gff(path_neuronal_database)
+end(neuronal_database) <- end(neuronal_database)+1 #fix 3'ends (0/1 based)
+start(neuronal_database) <- start(neuronal_database)+1
+```
+
+### Prepare FLAM-seq from iPSCs
+
+```{r, prepare poly(A) db, warning=FALSE, message=FALSE}
+dirFlam <- "input"
+flam_bams <- list.files(dirFlam, pattern = "*.bam", full.names = TRUE)
+# Load bam files of genomic alignments 
+flamSeqData <- unlist(GRangesList(lapply(flam_bams, function(x){
+  GenomicAlignments::readGAlignments(x) %>% 
+  GenomicRanges::GRanges(.) 
+})))
+# Invert strand 
+strand(flamSeqData) <- ifelse(strand(flamSeqData) == '+', '-', '+') 
+# Take last nucleotide of reads 
+flam3pEnds<- trim_single_nucleotide(flamSeqData)
+end(flam3pEnds)<-ifelse(strand(flam3pEnds)=="+", end(flam3pEnds)+1,end(flam3pEnds)-1) #fix 3'end (0/1 based) 
+start(flam3pEnds)<-ifelse(strand(flam3pEnds)=="+", start(flam3pEnds)+1,start(flam3pEnds)-1)
+
+# Put together both databases 
+combined.database <- c(neuronal_database, flam3pEnds)
+#cluster again 
+combined.reduced <- reduce(combined.database,  min.gapwidth = 10) 
+combined.reduced_ends <- ifelse(strand(combined.reduced) == "+", 
+                                end(combined.reduced), 
+                                start(combined.reduced))
+combined.reduced.fromClusters <- GRanges(
+    seqnames = seqnames(combined.reduced),
+    ranges = IRanges(
+        start = combined.reduced_ends,
+        width = 1
+    ),
+    strand = strand(combined.reduced)
+)
+seqlevelsStyle(combined.reduced.fromClusters) <- "UCSC"
+standard_chromosomes <- c(paste0("chr", 1:22), "chrX", "chrY")
+# Keeping only ranges from standard chromosomes
+combined.database <- combined.reduced.fromClusters[seqnames(combined.reduced.fromClusters) %in% standard_chromosomes]
+```
+
+# Nucleotide probabilities in reference database 
+```{r, plot reference Database, warning=FALSE, message=FALSE}
+c <- plotNucleotides(combined.database, BSgenome.Hsapiens.UCSC.hg38) + ggtitle("Reference (FLAM-seq + filtered 3p-seq)")+guides(fill=guide_legend(title="Nt"))+ylim(0,1)+theme_bw()+theme(legend.title=element_blank())
+
+```
+
+### Quality of reference datasets 
+
+### Plot overlapping clusters with reference. 
+```{r,message=FALSE, warning=FALSE}
+assembly_clusters.inReference <- subsetByOverlaps(assembly_clusters, 
+                                                  combined.database, 
+                                                  maxgap =10) # note optimized window
+d <- plotNucleotides(assembly_clusters.inReference, human_genome)+ggtitle("ONT-CAGE in Reference")+guides(fill=guide_legend(title="Nt"))+ylim(0,1)+theme_bw()+theme(legend.title=element_blank())
+
+ntprobinput<-((a | b) / (c | d))
+ntprobinput
+ggsave(filename = "output/ntprob_input.pdf", plot = ntprobinput, device = "pdf", width = 8, height = 8, dpi = 300)
+
+```
+
+### Identify 3'-ends in reference 
+
+```{r, annotate clusters, message=FALSE, warning=FALSE}
+window = 10
+assembly_clusters.inReference <- subsetByOverlaps(assembly_clusters, 
+                                                  combined.database, 
+                                                  window)
+# add label for those in reference 
+assembly_clusters$inRef <- ifelse(
+  assembly_clusters$cluster_id %in% 
+    assembly_clusters.inReference$cluster_id, 
+  TRUE,
+  FALSE)
+
+#separately for gencode
+
+assembly_clusters.inReference.gencode <- subsetByOverlaps(assembly_clusters.gencode, 
+                                                  combined.database, 
+                                                  window)
+# add label for those in reference 
+assembly_clusters.gencode$inRef <- ifelse(
+  assembly_clusters.gencode$cluster_id %in% 
+    assembly_clusters.inReference.gencode$cluster_id, 
+  TRUE,
+  FALSE)
+
+```
+
+### Retrieve  features to train the model or run it. 
+
+```{r, extract sequence features, message=FALSE, warning=FALSE}
+features_in_assembly.3pends <- extract_Seqfeatures(clusters3seq = assembly_clusters,
+                                                   genomeSeq = human_genome, 
+                                                   dwindow = 40,  #note optimized parameter
+                                                   upwindow = 40)
+
+features_in_assembly.3pends <- features_in_assembly.3pends %>%
+  mutate(signalDistance = ifelse(is.na(signalDistance), 
+                                 -99, 
+                                 signalDistance))
+
+#separately for gencode
+
+features_in_assembly.3pends.gencode <- extract_Seqfeatures(clusters3seq = assembly_clusters.gencode,
+                                                   genomeSeq = human_genome, 
+                                                   dwindow = 40,  #note optimized parameter
+                                                   upwindow = 40)
+
+features_in_assembly.3pends.gencode <- features_in_assembly.3pends.gencode %>%
+  mutate(signalDistance = ifelse(is.na(signalDistance), 
+                                 -99, 
+                                 signalDistance))
+
+```
+
+
+### Features (PAS) associated with 3'ends (in vs not in Reference) 
+
+```{r,message=FALSE, warning=FALSE}
+
+#roerder PASs
+
+features_in_assembly.3pends$polyA.Signal <- factor(features_in_assembly.3pends$polyA.Signal, levels = c("AATAAA","ATTAAA","AATATA","TATAAA", "TTTAAA", "AATACA","AAGAAA", "CATAAA","AATGAA","GATAAA","ACTAAA","AATAGA","not detected"))
+
+features_in_assembly.3pends.gencode$polyA.Signal <- factor(features_in_assembly.3pends.gencode$polyA.Signal, levels = c("AATAAA","ATTAAA","AATATA","TATAAA", "TTTAAA", "AATACA","AAGAAA", "CATAAA","AATGAA","GATAAA","ACTAAA","AATAGA","not detected"))
+
+e <- ggplot(features_in_assembly.3pends) +
+  geom_bar(aes(x=inRef, 
+               fill=polyA.Signal),position="fill") + 
+  theme_classic() + 
+  ylab("Fraction of 3' ends") + 
+  xlab("TES in Reference") +
+  theme(text = element_text(size=20))+ 
+  scale_fill_viridis_d()+
+  ggtitle("ONT-CAGE")+
+  guides(fill=guide_legend(title="PAS motif"))
+
+f <- ggplot(features_in_assembly.3pends.gencode) +
+  geom_bar(aes(x=inRef, 
+               fill=polyA.Signal),position="fill") + 
+  theme_classic() + 
+  ylab("Fraction of 3' ends") + 
+  xlab("TES in Reference") +
+  theme(text = element_text(size=20))+ 
+  scale_fill_viridis_d()+
+  ggtitle("Gencode")+
+  guides(fill=guide_legend(title="PAS motif"))
+
+pasinput<-(e | f)
+pasinput
+ggsave(filename = "output/pas_input.pdf", plot = pasinput, device = "pdf", width = 12, height = 8, dpi = 300)
+
+```
+
+# Random forest model training (skip if pretrained model is available)
+
+## Prepare training and test sets
+
+Due to the significantly larger number of non-overlapping sets compared to the reference, we utilized a smaller sampling proportion of 3' ends not found in the reference for training, in order to balance the dataset, sampling a fraction 0.8 of TRUE positives and 0.2 of the set of 3'ends not found in reference. 
+
+```{r, prepare training and test datasets, message=FALSE, warning=FALSE}
+# make training sets 
+positive <- features_in_assembly.3pends %>% filter(inRef==TRUE)
+negative <- features_in_assembly.3pends %>% filter(!inRef==TRUE)
+# sampling
+split_positive <- sample.split(positive, SplitRatio = 0.8)
+split_negative <- sample.split(negative, SplitRatio = 0.2)
+#### trin set 
+# subset
+positive_train <- subset( positive , split_positive == "TRUE")
+negative_train <- subset( negative, split_negative == "TRUE")
+# training
+train <- rbind(positive_train, 
+               negative_train)
+train$inRef <- as.factor(train$inRef)
+rownames(train) <- make.unique( train$cluster_id) 
+train <-
+  train %>% dplyr::select(
+    -c(
+      cluster_id
+    )
+  ) %>%
+  mutate(signalDistance = ifelse(is.na(signalDistance), 
+                                 -99, 
+                                 signalDistance))
+
+rownames(features_in_assembly.3pends) <- make.unique( features_in_assembly.3pends$cluster_id ) 
+# Testing data 
+test_data <- features_in_assembly.3pends %>% 
+  filter(!cluster_id %in% rownames(train)) %>% 
+  dplyr::select(
+    -c(
+      cluster_id
+    )
+  ) %>%
+  mutate(signalDistance = ifelse(is.na(signalDistance), 
+                                 -99, 
+                                 signalDistance))
+
+```
+
+## Traning parameters (skip if pretrained model is available)
+
+In our analysis, we utilized the `ranger` function to develop a Random Forest classifier, named `classifier_mtry10`, trained on the `train` dataset with `inRef` as the classification variable and all other variables as predictors. The model construction involved generating 1000 trees (`num.trees = 1000`), each considering a random subset of 10 predictors at every split (`mtry = 10`), and assessing feature importance based on impurity reduction (`importance = "impurity"`). We also addressed potential class imbalance and refined our probability threshold for enhanced accuracy and sensitivity by applying weights (`weights <- c(FALSE = 0.03, TRUE = 1)`) via the `class.weights` parameter. Additionally, the `probability = TRUE` parameter was activated for obtaining detailed class probabilities. This approach, especially given our clear a priori readouts (polyA signals and nucleotide distributions), enabled us to determine an optimal probability cutoff, effectively balancing accuracy and sensitivity in the model. The `seed` parameter was set to `NULL` to allow for random seeding, contributing to the model’s robustness. 
+
+```{r, training parameters}
+modelDir <- "output/rf_classifier.RDS"
+weights <- c(`FALSE` = 0.03, `TRUE` = 1)
+rf_classifier = ranger(inRef   ~ ., 
+                       data=train, 
+                       num.trees = 500, 
+                       mtry=10, 
+                       importance = "impurity",
+                       seed = 42,
+                       probability = TRUE,
+                       class.weights = weights,
+                       max.depth = 20) 
+saveRDS(rf_classifier, modelDir)
+```
+
+# Features of importance (skip if pretrained model is available)
+
+```{r}
+as.data.frame( rf_classifier$variable.importance ) %>% 
+  dplyr::mutate(feature = rownames(.)) %>%
+  dplyr::rename(importance = 1) %>% 
+  dplyr::mutate(importance = as.numeric(importance)) %>%
+  filter(importance>0) %>%
+  arrange(desc(importance)) %>% 
+  ggplot(data=., aes(x=reorder(feature, importance) , 
+                     y=importance)) +
+  geom_bar(stat="identity", fill="dodgerblue") + 
+  coord_flip() + 
+  theme_classic() +
+  theme(legend.position = "none") +
+  xlab("Features") + 
+  ylab("Importance")
+
+```
+
+### Accuracy and sensitivity on test data: recovered 3'ends per cut-off (skip if pretrained model is available)
+
+```{r, predict from test set}
+# Load pre-trained model with above parameters 
+t1 <- path.rf_model <- modelDir
+rf_model <- readRDS(path.rf_model)
+model.predictions <- predict(rf_model, data = test_data)
+
+# set TRUE classification probabilities 
+cut_offs <- c(0.001,0.01,0.05,0.1,0.25,0.5,0.75,0.95)
+names(cut_offs) <- paste0( ">", cut_offs) 
+# Plot recovered 3'ends per cut-off 
+t1<-lapply(cut_offs, function(x) {
+  model.predictions$predictions %>% 
+    as.data.frame(.) %>% 
+    filter(`TRUE` > x) %>% 
+    nrow(.)
+}) %>% 
+  unlist(.) %>% 
+  as.data.frame(.) %>%
+  dplyr::rename(num_of_3_ends = 1) %>%
+  mutate(probability = gsub("prob", "", rownames(.)))  %>%
+  ggplot(., aes(fill = probability, y = num_of_3_ends, x = probability)) +
+  geom_bar(position = "dodge", stat = "identity") + theme_classic() + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))+
+  scale_fill_brewer(palette="RdBu")
+
+```
+
+### Recovered poly(A) signals per cut-off (skip if pretrained model is available)
+
+```{r, recovered polyA per cut-off}
+test_data$prediction_prob <- model.predictions$predictions[,2]
+t2 <- lapply(cut_offs, function(x){
+  test_data %>% 
+    mutate(predicted_true = ifelse(prediction_prob>x, TRUE,FALSE)) %>% 
+    group_by(polyAsignalClass, predicted_true) %>% 
+    tally() %>% 
+    group_by(predicted_true) %>%
+    mutate(percentage = n / sum(n)) %>% 
+    as.data.frame(.)}) %>% 
+  do.call(rbind,.) %>% 
+  mutate(probability = paste0("0." , 
+                              str_split_fixed(rownames(.), 
+                                              "\\.", 
+                                              n=3)[,2])) %>%
+  ggplot(., aes(fill=polyAsignalClass, 
+                y=percentage, 
+                x=predicted_true)) + 
+  geom_bar(position="stack", 
+           stat="identity") +
+  theme_classic() + 
+  facet_grid(cols=vars(probability)) + 
+  theme(axis.text.x = element_text(angle = 45, 
+                                   vjust = 1, 
+                                   hjust=1))+
+  scale_fill_viridis_d()
+
+```
+
+### Sensitivity (skip if pretrained model is available)
+
+```{r, sensitivity analysis}
+t3 <- lapply(cut_offs, function(x){
+  test_data %>% 
+    mutate(predicted_true = ifelse(prediction_prob>x, TRUE,FALSE)) %>% 
+    group_by(inRef, predicted_true) %>% 
+    tally() %>% 
+    group_by(predicted_true) %>%
+    mutate(percentage = n / sum(n)) %>% 
+    as.data.frame(.)}) %>% 
+  do.call(rbind,.) %>% 
+  mutate(probability = paste0("0." , str_split_fixed(rownames(.), "\\.", n=3)[,2])) %>%
+  ggplot(., aes(fill=inRef, y=percentage, x=predicted_true)) + 
+  geom_bar(position="stack", stat="identity") +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  facet_grid(cols=vars(probability))+
+  scale_fill_manual(values=c("dodgerblue","firebrick"))
+
+qctest<-(t1 | t2 | t3)
+qctest
+ggsave(filename = "output/qc_testset.pdf", plot = qctest, device = "pdf", width = 16, height = 4, dpi = 300)
+
+```
+
+### Nucleotide compositions per cut-off (skip if pretrained model is available)
+
+```{r, calculating nucleotide composition}
+nt.probs <- lapply(cut_offs, function(x){
+  true_probabilities <- model.predictions$predictions %>% 
+    as.data.frame(.) %>% dplyr::pull(2)
+  test_data$true_probabilities <- true_probabilities 
+  class.true.clusters <- test_data %>% 
+    mutate(cluster_id = rownames(.)) %>% 
+    filter(true_probabilities>x) %>% 
+    dplyr::pull(cluster_id)
+  class.false.clusters <- test_data %>% 
+    mutate(cluster_id = rownames(.)) %>% 
+    filter(!true_probabilities>x) %>% dplyr::pull(cluster_id)
+  res <- list()
+  message("Found in cut off:",  x  , " ","found: ", length(assembly_clusters[assembly_clusters$cluster_id %in% class.true.clusters]), " ","positive 3'-ends")
+  res$true.3p_ends <- plotNucleotides(  assembly_clusters[assembly_clusters$cluster_id %in% class.true.clusters] , human_genome) 
+  res$false.3p_ends <- plotNucleotides(  assembly_clusters[assembly_clusters$cluster_id %in% class.false.clusters] , human_genome)
+  return(res)
+})
+
+ntp1 <-  nt.probs$`>0.001`$true.3p_ends +ggtitle("Prob > 0.001")+ylim(0,1)+theme_bw()
+ntp2 <-  nt.probs$`>0.01`$true.3p_ends +ggtitle("Prob > 0.01")+ylim(0,1)+theme_bw()
+ntp3 <-  nt.probs$`>0.1`$true.3p_ends +ggtitle("Prob > 0.1")+ylim(0,1)+theme_bw()
+ntp4 <-  nt.probs$`>0.25`$true.3p_ends +ggtitle("Prob > 0.25")+ylim(0,1)+theme_bw()
+
+nttest <- ((ntp1 | ntp2) / (ntp3 | ntp4))
+nttest
+ggsave(filename = "output/ntprob_testset.pdf", plot = nttest, device = "pdf", width = 8, height = 8, dpi = 300)
+
+```
+
+Define thresholds based on fdr 5%
+
+```{r, annotate clusters to assembly}
+
+#find threshold of probability so that 95% of test inRef and PAS detected are kept
+inRef.test_data <- test_data[test_data$inRef == TRUE & test_data$polyA.Signal != "not detected", ]
+inRef.test_data.sorted <- inRef.test_data[order(inRef.test_data$prediction_prob, decreasing = TRUE), ]
+true_index <- ceiling(0.95 * nrow(inRef.test_data))
+true_threshold <- inRef.test_data.sorted$prediction_prob[true_index] #0.3465253
+true_threshold
+nrow(test_data[test_data$prediction_prob>true_threshold,])/nrow(test_data) #-> ca. 14.6% are significant poly(A)
+
+#find threshold of probability so that 95% of non inRef no PAS are kept
+noRef.test_data <- test_data[test_data$inRef == FALSE, ]
+noRef.test_data.sorted <- noRef.test_data[order(noRef.test_data$prediction_prob, decreasing = TRUE), ]
+false_index <- ceiling(0.95 * nrow(noRef.test_data))
+false_threshold <- noRef.test_data.sorted$prediction_prob[false_index] #0.0001004803
+false_threshold
+nrow(test_data[test_data$prediction_prob<false_threshold,])/nrow(test_data) #ca. 4.8% are significant non-poly(A)
+
+
+```
+# Output results 
+
+Output results with a column of probabilities 
+
+## Annotate clusters to assembly 3'ends (start here if pretrained model is available)
+
+```{r, annotate clusters to assembly}
+#load pretrained model
+modelDir <- "output/rf_classifier.RDS"
+path.rf_model <- modelDir
+rf_model <- readRDS(path.rf_model)
+
+#run classification
+rownames(features_in_assembly.3pends) <-
+  make.unique(features_in_assembly.3pends$cluster_id)
+model.predictions <-
+  predict(rf_model, data = features_in_assembly.3pends)
+# overlapping segments to clusters
+features_in_assembly.3pends$probability_TRUE <-
+  model.predictions$predictions[, 2]
+assembly_clusters.annotated <- reduced_gr %>% 
+  as.data.frame(.) %>%
+  left_join(
+    .,
+    features_in_assembly.3pends %>%
+      dplyr::select(polyAsignalClass, 
+                    polyA.Signal, 
+                    cluster_id, 
+                    probability_TRUE,
+                    inRef), by = "cluster_id") %>% 
+  makeGRangesFromDataFrame(., keep.extra.columns = TRUE)
+# findOverlaps 
+hits_to_clusters <- findOverlaps( ends_trimmed, 
+                                  assembly_clusters.annotated)
+annotated_clusters <- ends_trimmed[queryHits(hits_to_clusters)]
+mcols(annotated_clusters) <- mcols(assembly_clusters.annotated[subjectHits(hits_to_clusters)])
+
+#separately for gencode
+rownames(features_in_assembly.3pends.gencode) <-
+  make.unique(features_in_assembly.3pends.gencode$cluster_id)
+model.predictions.gencode <-
+  predict(rf_model, data = features_in_assembly.3pends.gencode)
+# overlapping segments to clusters
+features_in_assembly.3pends.gencode$probability_TRUE <-
+  model.predictions.gencode$predictions[, 2]
+assembly_clusters.annotated.gencode <- reduced_gr.gencode %>% 
+  as.data.frame(.) %>%
+  left_join(
+    .,
+    features_in_assembly.3pends.gencode %>%
+      dplyr::select(polyAsignalClass, 
+                    polyA.Signal, 
+                    cluster_id, 
+                    probability_TRUE,
+                    inRef), by = "cluster_id") %>% 
+  makeGRangesFromDataFrame(., keep.extra.columns = TRUE)
+# findOverlaps 
+hits_to_clusters.gencode <- findOverlaps( ends_trimmed.gencode, 
+                                  assembly_clusters.annotated.gencode)
+annotated_clusters.gencode <- ends_trimmed.gencode[queryHits(hits_to_clusters.gencode)]
+mcols(annotated_clusters.gencode) <- mcols(assembly_clusters.annotated.gencode[subjectHits(hits_to_clusters.gencode)])
+
+#add frd thresholds-based class
+annotated_clusters$class <- ifelse(annotated_clusters$probability_TRUE >= true_threshold, "significant poly(A)", "unknown / non-significant")
+annotated_clusters[annotated_clusters$probability_TRUE <= false_threshold,]$class <- "significant non-poly(A)"
+annotated_clusters.gencode$class <- ifelse(annotated_clusters.gencode$probability_TRUE >= true_threshold, "significant poly(A)", "unknown / non-significant")
+annotated_clusters.gencode[annotated_clusters.gencode$probability_TRUE <= false_threshold,]$class <- "significant non-poly(A)"
+
+```
+
+# fraction of annotated positive based on ref per cut-off
+
+```{r}
+probability_cut_off <- c(0.001,0.01,0.05,0.1,0.25,0.5,0.75,0.95)
+names(probability_cut_off) <- paste0(">", probability_cut_off)
+t4 <- lapply(probability_cut_off, function(x){
+  a1 <- annotated_clusters %>% as.data.frame(.) %>%
+    filter(inRef==TRUE) %>% 
+    mutate(isFound_inRef_and_Forest = ifelse(inRef==TRUE & probability_TRUE>x, TRUE, FALSE)) %>%
+    group_by(isFound_inRef_and_Forest) %>% 
+    tally() %>%
+    mutate(percentage = n/sum(n)) %>%
+    as.data.frame(.) 
+  a1$probability <- x
+  return(a1)
+}) %>% do.call(rbind,.) %>%
+  ggplot(., aes(fill=isFound_inRef_and_Forest, y=percentage, x=as.factor(probability))) + 
+    geom_bar(position="stack", stat="identity") + 
+  theme_classic()+ggtitle("ONT-CAGE in Ref.")+
+  xlab("Cutoff")+
+  scale_fill_manual(values=c("dodgerblue","firebrick"))+theme(legend.title=element_blank())
+#separately for gencode
+t5 <- lapply(probability_cut_off, function(x){
+  a1 <- annotated_clusters.gencode %>% as.data.frame(.) %>%
+    filter(inRef==TRUE) %>% 
+    mutate(isFound_inRef_and_Forest = ifelse(inRef==TRUE & probability_TRUE>x, TRUE, FALSE)) %>%
+    group_by(isFound_inRef_and_Forest) %>% 
+    tally() %>%
+    mutate(percentage = n/sum(n)) %>%
+    as.data.frame(.) 
+  a1$probability <- x
+  return(a1)
+}) %>% do.call(rbind,.) %>%
+  ggplot(., aes(fill=isFound_inRef_and_Forest, y=percentage, x=as.factor(probability))) + 
+    geom_bar(position="stack", stat="identity") + 
+  theme_classic()+ggtitle("Gencode in Ref.")+
+  xlab("Cutoff")+
+  scale_fill_manual(values=c("dodgerblue","firebrick"))+theme(legend.title=element_blank())
+
+t6 <- lapply(probability_cut_off, function(x){
+  a1 <- annotated_clusters %>% as.data.frame(.) %>%
+    filter(inRef==FALSE) %>% 
+    mutate(isFound_in_Forest = ifelse(inRef==FALSE & probability_TRUE>x, TRUE, FALSE)) %>%
+    group_by(isFound_in_Forest) %>% 
+    tally() %>%
+    mutate(percentage = n/sum(n)) %>%
+    as.data.frame(.) 
+  a1$probability <- x
+  return(a1)
+}) %>% do.call(rbind,.) %>%
+  ggplot(., aes(fill=isFound_in_Forest, y=percentage, x=as.factor(probability))) + 
+    geom_bar(position="stack", stat="identity") + 
+  theme_classic()+ggtitle("ONT-CAGE all")+
+  xlab("Cutoff")+
+  scale_fill_manual(values=c("dodgerblue","firebrick"))+theme(legend.title=element_blank())
+
+#separately for gencode
+t7 <- lapply(probability_cut_off, function(x){
+  a1 <- annotated_clusters.gencode %>% as.data.frame(.) %>%
+       filter(inRef==FALSE) %>% 
+    mutate(isFound_in_Forest = ifelse(inRef==FALSE & probability_TRUE>x, TRUE, FALSE)) %>%
+    group_by(isFound_in_Forest) %>% 
+    tally() %>%
+    mutate(percentage = n/sum(n)) %>%
+    as.data.frame(.) 
+  a1$probability <- x
+  return(a1)
+}) %>% do.call(rbind,.) %>%
+  ggplot(., aes(fill=isFound_in_Forest, y=percentage, x=as.factor(probability))) + 
+    geom_bar(position="stack", stat="identity") + 
+  theme_classic()+ggtitle("Gencode all")+
+  xlab("Cutoff")+
+  scale_fill_manual(values=c("dodgerblue","firebrick"))+theme(legend.title=element_blank())
+
+```
+
+### Recovered poly(A) signals per cut-off (skip if pretrained model is available)
+
+```{r, recovered polyA per cut-off}
+t8 <- lapply(cut_offs, function(x){
+  as.data.frame(annotated_clusters) %>% 
+    mutate(predicted_true = ifelse(probability_TRUE>x, TRUE,FALSE)) %>% 
+    group_by(polyAsignalClass, predicted_true) %>% 
+    tally() %>% 
+    group_by(predicted_true) %>%
+    mutate(percentage = n / sum(n)) %>% 
+    as.data.frame(.)}) %>% 
+  do.call(rbind,.) %>% 
+  mutate(probability = paste0("0." , 
+                              str_split_fixed(rownames(.), 
+                                              "\\.", 
+                                              n=3)[,2])) %>%
+  ggplot(., aes(fill=polyAsignalClass, 
+                y=percentage, 
+                x=predicted_true)) + 
+  geom_bar(position="stack", 
+           stat="identity") +
+  theme_classic() + 
+  facet_grid(cols=vars(probability)) + 
+  theme(axis.text.x = element_text(angle = 45, 
+                                   vjust = 1, 
+                                   hjust=1))+
+  scale_fill_viridis_d()+ggtitle("ONT-CAGE")
+
+t9 <- lapply(cut_offs, function(x){
+  as.data.frame(annotated_clusters.gencode) %>% 
+    mutate(predicted_true = ifelse(probability_TRUE>x, TRUE,FALSE)) %>% 
+    group_by(polyAsignalClass, predicted_true) %>% 
+    tally() %>% 
+    group_by(predicted_true) %>%
+    mutate(percentage = n / sum(n)) %>% 
+    as.data.frame(.)}) %>% 
+  do.call(rbind,.) %>% 
+  mutate(probability = paste0("0." , 
+                              str_split_fixed(rownames(.), 
+                                              "\\.", 
+                                              n=3)[,2])) %>%
+  ggplot(., aes(fill=polyAsignalClass, 
+                y=percentage, 
+                x=predicted_true)) + 
+  geom_bar(position="stack", 
+           stat="identity") +
+  theme_classic() + 
+  facet_grid(cols=vars(probability)) + 
+  theme(axis.text.x = element_text(angle = 45, 
+                                   vjust = 1, 
+                                   hjust=1))+
+  scale_fill_viridis_d()+ggtitle("Gencode")
+
+qc_cutoff<-((t4|t5)/(t6|t7)/(t8|t9))
+qc_cutoff
+ggsave(filename = "output/qc_bycutoff.pdf", plot = qc_cutoff, device = "pdf", width = 12, height = 12, dpi = 300)
+
+```
+
+### Nucleotide compositions per cut-off (skip if pretrained model is available)
+
+```{r, calculating nucleotide composition}
+nt.probs <- lapply(cut_offs, function(x){
+  res <- plotNucleotides(annotated_clusters[annotated_clusters$probability_TRUE > x] , human_genome) 
+  return(res)
+})
+ntp5 <-  nt.probs$`>0.001` +ggtitle("ONT-CAGE Prob > 0.001")+ylim(0,1)+theme_bw()
+ntp6 <-  nt.probs$`>0.01` +ggtitle("ONT-CAGE Prob > 0.01")+ylim(0,1)+theme_bw()
+ntp7 <-  nt.probs$`>0.1` +ggtitle("ONT-CAGE Prob > 0.1")+ylim(0,1)+theme_bw()
+ntp8 <-  nt.probs$`>0.25` +ggtitle("ONT-CAGE Prob > 0.25")+ylim(0,1)+theme_bw()
+nt.probs.gencode <- lapply(cut_offs, function(x){
+  res <- plotNucleotides(annotated_clusters.gencode[annotated_clusters.gencode$probability_TRUE > x] , human_genome) 
+  return(res)
+})
+ntp9 <-  nt.probs.gencode$`>0.001` +ggtitle("Gencode Prob > 0.001")+ylim(0,1)+theme_bw()
+ntp10 <-  nt.probs.gencode$`>0.01` +ggtitle("Gencode Prob > 0.01")+ylim(0,1)+theme_bw()
+ntp11 <-  nt.probs.gencode$`>0.1` +ggtitle("Gencode Prob > 0.1")+ylim(0,1)+theme_bw()
+ntp12 <-  nt.probs.gencode$`>0.25` +ggtitle("Gencode Prob > 0.25")+ylim(0,1)+theme_bw()
+
+nt_cutoff<-((ntp5 | ntp6 | ntp7 | ntp8)/(ntp9 | ntp10 | ntp11 | ntp12))
+nt_cutoff
+ggsave(filename = "output/ntprob_bycutoff.pdf", plot = nt_cutoff, device = "pdf", width = 16, height = 8, dpi = 300)
+
+```
+
+## Export files 
+```{r}
+rtracklayer::export.gff2(annotated_clusters, "output/annotated.3pclusters.gtf")
+rtracklayer::export.gff2(annotated_clusters.gencode, "output/annotated.3pclusters.gencode.gtf")
+```
+
+# Session info 
+
+```{r}
+sessionInfo()
+```

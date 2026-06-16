@@ -35,7 +35,7 @@ For gene level matching, the integrated transcript model output was processed th
 
 
 # <a name="RNAseq"></a>Analyses on short-read RNA-seq
-Short-read RNA-seq FASTQ files of iPSC, NSC and Neuron were subjected to Kallisto,13 using the final transcriptome with all the completely and partially detected GENCODE models, excluding ribosomal RNA, as the index input. Only the transcript models and gene models detected by the CFC-seq of iPSC, NSC and Neuron with at least one complete read were used for the comparison. Transcript models and gene models with Kallisto quantification >0 from any of the samples were considered as detectable by short-read RNA-seq.
+Short-read RNA-seq FASTQ files of iPSC, NSC and Neuron were subjected to Kallisto, using the final transcriptome with all the completely and partially detected GENCODE models, excluding ribosomal RNA, as the index input. Only the transcript models and gene models detected by the CFC-seq of iPSC, NSC and Neuron with at least one complete read were used for the comparison. Transcript models and gene models with Kallisto quantification >0 from any of the samples were considered as detectable by short-read RNA-seq.
 ```
 [1] kallisto quant -i [kallisto_index] -o [out_dir] --rf-stranded [fq_path1] [fq_path2]
 ```
