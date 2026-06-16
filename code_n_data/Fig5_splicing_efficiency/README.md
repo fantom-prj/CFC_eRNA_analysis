@@ -1,4 +1,4 @@
-# splicing efficiency
+# Splicing efficiency
 
 * splicing_junction.R -> main code describing all the analyses
 * junction_run.py -> associated code for running splice AI
@@ -7,7 +7,6 @@
 
 # Related Methods
 * [Splicing efficiency and spliceAI](#SJ)
-* [Genomic and Regulatory Characterization of TES](#TESenrichment)
 
 
 # <a name="SJ"></a>Splicing efficiency and spliceAI
