@@ -1,7 +1,7 @@
 # TES features for non-poly(A) RNA 
 
 * TES_main_analysis.R -> main code describing all the analyses
-* CGI_TES_.R -> associated code for distribution of CGI across TES regions
+* CGI_TES.R -> associated code for distribution of CGI across TES regions
 * MYC_binding_intersect.R -> associated code for intersection and distribution of MYC binding across TES regions
 * ./RNAfold/output/RNAfold_run.R -> associated code for running RNAfold and collecting base-pairing probability
 * Results are presented in Fig.5 and ext_Fig.7
