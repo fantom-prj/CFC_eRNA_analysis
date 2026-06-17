@@ -13,6 +13,7 @@
 * [Genomic properties incorporation to tCRE and ex5_cluster](gproperties)
 * [Bidirectionality of tCREs](#bidirectional)
 * [Super enhancer identification](#SE)
+* [Promoter typing](#promotertype)
 * [Integration of histone modification](#histone)
 
 
@@ -63,6 +64,11 @@ ROSE_main.py -g hg38 -i ips_27ac_narrowpeak.gff -r iPS-K27ac-both_rmdup_sorted.b
 ROSE_main.py -g hg38 -i nsc_27ac_narrowpeak.gff -r NSC-K27ac-both_rmdup_sorted.bam –c NSC-IgG-r1_rmdup_sorted.bam -o NSC_k27ac5 -s 10000 -t 2500
 ROSE_main.py -g hg38 -i nrn_27ac_narrowpeak.gff -r NRN-K27ac-both_rmdup_sorted.bam –c NRN-IgG-r1_rmdup_sorted.bam -o NRN_k27ac5 -s 10000 -t 2500
 ```
+
+# <a name="promotertype"></a>Promoter typing
+
+The tCREs were then classified for the promoter types by intersecting with SCREEN cCREs, in an order of promoter-like, enhancer-like and CTCF-alone. If a tCRE was intersected with both promoter-like and enhancer-like SCREEN cCREs, the tCRE was defined as promoter-like. If no cCRE was found to intersect with the tCREs, these tCREs were defined as “unclassed”. These promoter types were directly transferred to the TSS clusters and transcript models. At the gene model level, promoter types of the linked transcript models were collected. If more than one promoter type were found in one gene model, the promoter type was decided at the priority of promoter-like > enhancer-like > CTCF-alone > unclassed. Notably, the transcript models transcribed from unclassed tCREs without ATAC support were included in the finalized transcriptome, annotated with the linked tCRE. <br>
+Expression level of tCREs was measured by CTSS of qualified alignments located inside the genuine TSS clusters, where the per-cluster signal was collapsed into per-tCRE level. The signal was normalized across all the samples with individual replicates by using the RLE method in edgeR. In the preparation of running SALA, strand-specific TSS clusters were merged if they are within 75 nt distance. If the signal from the merged clusters revealed bi-modal distribution (>20% from each cluster), the merged clusters were split at the midpoint of the two summits. This extension was designed for concluding reads and reference transcript models into the same read class if their 5’ ends are in a proximity. <br>
 
 # <a name="histone"></a>Integration of histone modification
 
