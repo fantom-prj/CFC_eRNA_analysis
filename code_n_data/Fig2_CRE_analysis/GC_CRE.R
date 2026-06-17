@@ -29,6 +29,14 @@ primary_folder="/osc-fs_home/yip/CFC_seq_paper_fig_data/"
 path_fig2_data=paste0(primary_folder,"fig2/data/")
 GC_path=paste0(primary_folder,"code_n_data/Fig2_CRE_analysis/GCcontent/")
 
+
+#===============================================================================
+# The following tables were removed after incorporation:
+# ontCAGE.Neuron_THP1.CRE.stranded_summit_2kb_extend.gc.bed.gz; random_2kb_extend.gc.bed.gz; ontCAGE.Neuron_THP1.CRE.stranded_summit_2kb_extend.gc.fakebed.tsv.gz; ontCAGE.Neuron_THP1.CRE.stranded_summit_2kb_extend.random_gc.fakebed.tsv.gz
+# provide upon request
+#===============================================================================
+
+
 #===============================================================================
 #bash
 #prepare UCSC GC content bed file

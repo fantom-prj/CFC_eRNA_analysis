@@ -1,0 +1,6 @@
+ssCAGE.NSC_rep2	/analysisdata/fantom6/Interactome/ONT.CAGE.satellite/dorado_run/SCAFE/20231126/ssCAGE_Neuronalone_mapq0/R1_bam/NSC_rep2_read1_primary.sort.bam
+ssCAGE.NSC_rep1	/analysisdata/fantom6/Interactome/ONT.CAGE.satellite/dorado_run/SCAFE/20231126/ssCAGE_Neuronalone_mapq0/R1_bam/NSC_rep1_read1_primary.sort.bam
+ssCAGE.Neuron_rep2	/analysisdata/fantom6/Interactome/ONT.CAGE.satellite/dorado_run/SCAFE/20231126/ssCAGE_Neuronalone_mapq0/R1_bam/Neuron_rep2_read1_primary.sort.bam
+ssCAGE.Neuron_rep1	/analysisdata/fantom6/Interactome/ONT.CAGE.satellite/dorado_run/SCAFE/20231126/ssCAGE_Neuronalone_mapq0/R1_bam/Neuron_rep1_read1_primary.sort.bam
+ssCAGE.iPS_rep2	/analysisdata/fantom6/Interactome/ONT.CAGE.satellite/dorado_run/SCAFE/20231126/ssCAGE_Neuronalone_mapq0/R1_bam/iPS_rep2_read1_primary.sort.bam
+ssCAGE.iPS_rep1	/analysisdata/fantom6/Interactome/ONT.CAGE.satellite/dorado_run/SCAFE/20231126/ssCAGE_Neuronalone_mapq0/R1_bam/iPS_rep1_read1_primary.sort.bam

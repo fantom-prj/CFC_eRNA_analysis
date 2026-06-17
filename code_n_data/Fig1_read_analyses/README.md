@@ -3,7 +3,7 @@
 * fig1.analysis.R -> main code describing all the analyses
 * TES_polyA.R -> associated code for poly(A) prediction and 3' ends assessment
 * longread.*.sh -> processing other long-read protocols from fastq to mRNA 5' ends
-* ./fantom_random_forest20240407/code/rf_helpers.R -> poly(A) prediction by random forest [package available in SALA(https://github.com/fantom-prj/SALA)]
+* ./fantom_random_forest20240407/RunForest.Rmd -> poly(A) prediction by random forest [package available in SALA(https://github.com/fantom-prj/SALA)]
 * Results are presented in ext_Fig.1
 * Data is not included here, please refer to https://fantom.gsc.riken.jp/6/suppl/Yip_et_al_2026_CFC
 
@@ -41,6 +41,6 @@ For polyadenylation signal (PAS) motif identification, we performed a genome-wid
 Following the exclusion of known non-poly(A) reference transcripts and loci affected by internal priming, the baseline transcript capture layout of non-PAT standard poly-dT protocol was compared with PAT protocol (Ext_Fig. 1g). To investiagte whether the PAT protocol increase the prevalence of incomplete transcript models, protein-coding mRNAs lacking a PAS motif were classified based on genomic coordinations of their 3’ ends. Finally, PAT-specifc 3’ends were isolated by substracting the 3’ end coordinates detected in the non-PAT control. These 3’ ends were intersected with different genomic regions derived from annotations of GENCODE protein-coding transcripts.
 
 
-# <a name="predict"></a>oly(A)-tail prediction
+# <a name="predict"></a>Poly(A)-tail prediction
 In order to call bona fide 3’ ends for the transcripts detected by CFC-seq, we trained a random forest classifier on a curated database of 3’ ends identified by FLAM-seq and 3p-seq. Briefly, we collected all 3’ ends detected by CFC-seq and flagged those overlapping with the curated (hereon “reference”) dataset within a window of 10 nt. We then trained a random forest classifier using the ranger package (v. 0.16.0) in R 4.3.1, considering the 3’ ends found in the reference as true positives and defining a set of features to train the model on, including the presence, type and position of polyadenylation signals and the nucleotide composition of a 50 nt window upstream and downstream of each 3’ end. We then used the trained model to assign a probability score (“poly(A) score”) to each 3’ end in the CFC-seq dataset. We defined an upper threshold at which 95% of 3’ ends found in the reference and containing a polyadenylation signal were classified as true to define “poly(A)” 3’ ends (threshold > 0.34), and a lower threshold at which 95% of all 3’ ends were classified as true to flag “non-poly(A)” 3’ ends (threshold < 7.6e-5). For downstream analyses, PAS-positive 3’ ends and 3’ ends classified as true poly(A) were considered as poly(A) 3’ ends while the others were considered as non-poly(A). The read-based analysis result was transferred to the transcript-level and maintained in Table S4.
 

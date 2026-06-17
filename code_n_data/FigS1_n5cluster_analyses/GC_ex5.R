@@ -31,6 +31,13 @@ GC_path=paste0(primary_folder,"code_n_data/Fig2_CRE_analysis/GCcontent/")
 GCex5_path=paste0(primary_folder,"code_n_data/FigS1_n5cluster_analyses/GCcontent/")
 
 #===============================================================================
+# The following tables were removed after incorporation:
+# Neuron_THP1.S3.end5.summit.table5.2000bp_extend.gc.bed.gz; random_2kb_extend.gc.bed.gz; Neuron_THP1.S3.end5.summit.table5.2000bp_extend.gc.fakebed.tsv.gz; Neuron_THP1.S3.end5.summit.table5.2000bp_extend.random_gc.fakebed.tsv.gz
+# provide upon request
+#===============================================================================
+
+
+#===============================================================================
 #bash
 #prepare UCSC GC content bed file
 #cd /analysisdata/fantom6/Interactome/resources/UCSC

@@ -53,7 +53,7 @@ data1e=data%>%group_by(V4,n5_string)%>%dplyr::summarise(read_median_length=media
 
 write.table(data1c,gzfile(paste0(path_fig4_data,"features_by_ex5cluster.tsv.gz")),col.names=T, row.names=F, sep="\t", quote=F)
 # for -> table S9
-write.table(data1e,gzfile(paste0(path_fig4_data,"length.exon.info.end5_cluster_celltype.tsv.gz")),col.names=T, row.names=F, sep="\t", quote=F)
+#write.table(data1e,gzfile(paste0(path_fig4_data,"length.exon.info.end5_cluster_celltype.tsv.gz")),col.names=T, row.names=F, sep="\t", quote=F)
 
 #===============================================================================
 #collapse the read length and exon number into transcript model base
@@ -68,7 +68,7 @@ data2$loc=sapply(strsplit(data2$loc,":"),"[",2)
 data2$transcript_range=as.numeric(sapply(strsplit(data2$loc,"-"),"[",2))-as.numeric(sapply(strsplit(data2$loc,"-"),"[",1))
 write.table(data2,gzfile(paste0(path_fig4_data,"features_by_transcriptModel.tsv.gz")), col.names=T, row.names=F, sep="\t", quote=F)
 # for -> table S10
-write.table(data2a,gzfile(paste0(path_fig4_data,"length.exon.info.withcelltype.tsv.gz")), col.names=T, row.names=F, sep="\t", quote=F)
+#write.table(data2a,gzfile(paste0(path_fig4_data,"length.exon.info.withcelltype.tsv.gz")), col.names=T, row.names=F, sep="\t", quote=F)
 
 rm(data)
 gc()
@@ -113,7 +113,7 @@ data1a=data12c[which(!is.na(data12c$ex5cluster_class)),]
 data1k=data1a[-which(data1a$ex5cluster_class != "mRNA" & data1a$Gencode_geneClass2=="protein_coding"),]
 data1k=data1k[-which(data1k$ex5cluster_class == "mRNA" & data1k$Gencode_geneClass2!="protein_coding"),]
 
-#revise data1
+#update data1
 data1=right_join(data1,data1k[,c(1,3,4,5)], by="n5_string",copy=F)
 write.table(data1,gzfile(paste0(path_fig4_data,"features_by_ex5cluster.tsv.gz")), row.names=F, col.names=T, sep="\t", quote=F)
 #number of ex5_cluster -> 58109
@@ -126,7 +126,6 @@ colnames(n5cluster_info)[4]="n5_string"
 data1=read.delim(paste0(path_fig4_data,"features_by_ex5cluster.tsv.gz"), header=T, stringsAsFactors = F, check.names = F)
 
 #join the ex5_cluster feature (from Fig.S1) with the ex5_cluster base RNA features
-
 data1=left_join(data1, n5cluster_info, by="n5_string",copy=F)
 data1=data1[which(!is.na(data1$ex5cluster_class)),]
 data1%>%group_by(ex5cluster_class,ATAC)%>%dplyr::summarise(count=n())
@@ -134,7 +133,6 @@ data1%>%group_by(promoter_type,ATAC)%>%dplyr::summarise(count=n())
 
 data1$ex5cluster_class=factor(data1$ex5cluster_class,levels=c("mRNA","p_ncRNA","e_ncRNA", "CTCF_ncRNA", "other_ncRNA"))
 data1%>%group_by(ex5cluster_class)%>%dplyr::summarise(rlength=median(read_median_length),exon=median(median_exon),range=median(median_range), count=n())
-
 
 data1$CpGTATA[which(data1$any_CpG_island == "Yes" & data1$TATA_box == "No" & data1$distance_cCRE_PLS < 2000)]="CGIap"
 data1$CpGTATA[which(data1$any_CpG_island == "Yes" & data1$TATA_box == "No" & data1$distance_cCRE_PLS >= 2000)]="CGInap"
@@ -165,7 +163,6 @@ data1$conserve[which(data1$mean_up500 > median(data1$mean_up500, na.rm=T))]="Yes
 write.table(data1,gzfile(paste0(path_fig4_data,"features_by_ex5cluster.tsv.gz")), row.names=F, col.names=T, sep="\t", quote=F)
 #stored as "features_by_ex5cluster.tsv.gz" in [primary_folder]/fig4/data
 # for -> Fig. 4a-g, i,j & table S9
-
 
 
 #enrichment across features
