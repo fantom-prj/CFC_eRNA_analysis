@@ -1,14 +1,10 @@
 # pre-processing of the CFC-seq
 
-* isoquant.process.R ->  code describing downstream processing from Isoquant output
-* talon.process.R -> code describing downstream processing from Talon output
-* Results are used in ext_Fig.4
-* Data is not included here, please refer to https://fantom.gsc.riken.jp/6/suppl/Yip_et_al_2026_CFC
 
 # Related Methods
 * [Pre-processing of the long-read ONT data](#preprocess)
 * [Mapping to genome and TranscriptClean](#mapping)
-
+* [Confident splice junctions from short-read RNA-seq](#SJ)
 
 # <a name="preprocess"></a>Pre-processing of the long-read ONT data
 
@@ -50,4 +46,24 @@ The trimmed and orientated reads were then mapped to the human reference genome 
 [2] minimap2 -t [threads] -2 -ax splice -uf --MD --junc-bed gencode.v39.annotation.bed --secondary=no GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta.mmi [fastq_file]> [sam_file]
 [3] python TranscriptClean.py -t [threads] --sam [sam_file] --genome GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta -j gencode.v39.annotation.SJs.txt --outprefix sample --deleteTmp --tmpDir sample/tmp
 [4] talon_label_reads --f pass_trim_clean_corrected.sam --ar 16 --fracA 0.5 --g GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta --t 12 --tmpDir sample/tmp --deleteTmp --o sample
+```
+
+# <a name="SJ"></a>Confident splice junctions from short-read RNA-seq
+
+To obtain confident splice junction file (SJ.out.tab), all the fastq files of the short-read RNA-seq were combined into read1 and read2 fastq files and subjected to STAR for genome mapping using hg38 GENCODE v39 as reference.
+```
+[1] zcat *_R1_*.fastq.gz | gzip > all_reads_R1.fastq.gz
+[2] zcat *_R2_*.fastq.gz | gzip > all_reads_R2.fastq.gz
+[3] STAR \
+  --runThreadN 8 \
+  --genomeDir /path/to/STAR_index_hg38_GENCODEv39 \
+  --readFilesIn all_reads_R1.fastq.gz all_reads_R2.fastq.gz \
+  --readFilesCommand zcat \
+  --outFileNamePrefix star_output/ \
+  --outSAMtype BAM Unsorted \
+  --outSJfilterReads Unique \
+  --outFilterMultimapNmax 1 \
+  --alignSJoverhangMin 8 \
+  --alignSJDBoverhangMin 1 \
+  --outSAMstrandField intronMotif
 ```
