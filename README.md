@@ -8,8 +8,8 @@ Long-read sequencing has transformed transcriptome profiling, yet capturing full
 
 | Tool | Source |
 |------|--------|
-| SALA (v1.0) [this study] | https://github.com/fantom-prj/SALA |
-| Tail trimmer (v1.4) [this study] | https://github.com/fantom-prj/SALA |
+| SALA (v1.0) | https://github.com/fantom-prj/SALA |
+| Tail trimmer (v1.4) | https://github.com/fantom-prj/SALA |
 | Dorado (v0.2.4) | https://github.com/nanoporetech/dorado |
 | Minimap2 (v2.17-r974-dirty) | https://github.com/lh3/minimap2 |
 | TranscriptClean (v2.0.3) | https://github.com/mortazavilab/TranscriptClean |
