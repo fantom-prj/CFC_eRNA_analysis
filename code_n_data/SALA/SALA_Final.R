@@ -952,16 +952,16 @@ path_supp=paste0(primary_folder,"supplementary_table/")
 SCAFE_path=paste0(primary_folder,"code_n_data/SCAFE/CFC_Neuron_THP1/ontCAGE/aggregate/run_full/out/annotate/ontCAGE.Neuron_THP1/bed/")
 
 table5=read.delim(paste0(path2,"table5.chimeric.194K.remove.permissive.isoform.tsv.gz"), header=T, check.names=F, stringsAsFactors=F)
-CREanno=read.delim(paste0(primary_folder,"code_n_data/SCAFE/CFC_Neuron_THP1/ontCAGE/aggregate/run_full/out/annotate/ontCAGE.Neuron_THP1.CRE.info.p.e.se.tsv"), header=T, stringsAsFactors = F, check.names = F)
+CREanno=read.delim(paste0(primary_folder,"code_n_data/SCAFE/CFC_Neuron_THP1/ontCAGE/aggregate/run_full/out/annotate/ontCAGE.Neuron_THP1.CRE.info.p.e.se.tsv.gz"), header=T, stringsAsFactors = F, check.names = F)
 table5=left_join(table5[,-67], CREanno[,c(1,35)], by="CREID",copy=F)
-table5=table5[,c(1:66,120,67:119)]
+table5=table5[,c(1:66,126,67:125)]
 all_pas1=read.delim(paste0(path_supp,"TableS1_polyA.tsv.gz"), header=T, stringsAsFactors = F, check.names = F)
-table5=left_join(table5, all_pas1[,c(7,4,6,8:10,11)], by="TESID", copy=F)
+table5=left_join(table5[,-c(111,112,113)], all_pas1[,c(7,4,6,8:10,11)], by="TESID", copy=F)
 
 table5$polyA="No"
 table5$polyA[which(table5$polyA_predict_class=="significant poly(A)" | table5$PAS_motif_class == "Yes")]="Yes"
 table5%>%group_by(polyA_predict_class,PAS_motif_class,polyA)%>%dplyr::summarise(count=n())
-table5a=table5[,c(1:18,41:43,45:50,56:73,76:79,86:102,106:120)]
+table5a=table5[,c(1:18,41:43,45:50,56:73,76:79,86:102,106:130)]
 colnames(table5a)[c(26,27,53,54,61,62,66)]=c("THP1","dTHP1","T4_Gencode_geneClass","T4_Gencode_geneClass2","T_ratio_THP1","T_ratio_dTHP1","transcript_group")
 colnames(table5a)=gsub("T4_","",colnames(table5a))
 write.table(table5a,paste0(path_supp,"TableS4_finalTx.tsv"), col.names=T, row.names=F, sep="\t",quote=F)

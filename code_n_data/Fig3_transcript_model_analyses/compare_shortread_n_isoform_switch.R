@@ -433,7 +433,7 @@ table5e=left_join(table5e, table5_hip[,c(4,13)], by=c("associated_transcript"="V
 colnames(table5e)[c(34,35)]=c("TSS_hipSTR","TSS_hipSTR_ENST")
 write.table(table5e, paste0(path_fig3_data,"novel.isoform.protein_coding.SQANTI3.table5.tsv.gz"), col.names=T, row.names=F, sep="\t", quote=F)
 
-combine2=read.delim(paste0(path_fig3_data,"isoform.switch.transcript.1279.tsv.gz"), header=T, stringsAsFactors = F, check.names = F)
+combine2=read.delim(paste0(path_fig3_data,"isoform.switch.transcript.1192.tsv.gz"), header=T, stringsAsFactors = F, check.names = F)
 combine2=left_join(combine2, table5e[,c(1,23:25,34)], by=c("isoform_id"="model_ID"),copy=F)
 combine2=left_join(combine2 ,SQANTI3.table5[,c(1,31:36,47)], by=c("isoform_id"="isoform"), copy=F)
 combine2$class[grep("ENS",combine2$isoform_id)]="GENCODE"
@@ -441,7 +441,7 @@ combine2$class[which(is.na(combine2$class))]="novel_in_catalog"
 colnames(combine2)[42]="structural_category"
 combine2$end_class[which(is.na(combine2$end_class))]="n.a."
 
-combine5=read.delim(paste0(path_fig3_data,"isoform.switch.550.hit.isoform.alone.tsv.gz"), header=T, stringsAsFactors = F, check.names = F)
+combine5=read.delim(paste0(path_fig3_data,"isoform.switch.534.hit.isoform.alone.tsv.gz"), header=T, stringsAsFactors = F, check.names = F)
 combine5=left_join(combine5, table5e[,c(1,23:25,34)], by=c("isoform_id"="model_ID"),copy=F)
 combine5=left_join(combine5 ,SQANTI3.table5[,c(1,31:36,47)], by=c("isoform_id"="isoform"), copy=F)
 combine5$class[grep("ENS",combine5$isoform_id)]="GENCODE"
@@ -449,8 +449,8 @@ combine5$class[which(is.na(combine5$class))]="novel_in_catalog"
 colnames(combine5)[46]="structural_category"
 combine5$end_class[which(is.na(combine5$end_class))]="n.a."
 
-write.table(combine2, gzfile(paste0(path_fig3_data,"isoform.switch.transcript.1279.tsv.gz")), col.names=T, row.names=F, sep="\t", quote=F)
-write.table(combine5, gzfile(paste0(path_fig3_data,"isoform.switch.550.hit.isoform.alone.tsv.gz")), col.names=T, row.names=F, sep="\t", quote=F)
+write.table(combine2, gzfile(paste0(path_fig3_data,"isoform.switch.transcript.1192.tsv.gz")), col.names=T, row.names=F, sep="\t", quote=F)
+write.table(combine5, gzfile(paste0(path_fig3_data,"isoform.switch.534.hit.isoform.alone.tsv.gz")), col.names=T, row.names=F, sep="\t", quote=F)
 
 
 #===============================================================================
@@ -512,8 +512,8 @@ c0=left_join(c0,kk1,by=c("chr"="V1","start"="V2","end"="V3"),copy=F)
 c0a=separate_rows(c0, V4, sep="\\|")
 write.table(c0[,c(5:8,2,1,3,4)],gzfile(paste0(path_fig3_data,"ex5cluster_ATACcount_celltype.tsv.gz")), row.names=F, col.names=T, sep="\t", quote=F)
 
-combine2=read.delim(paste0(path_fig3_data,"isoform.switch.transcript.1279.tsv.gz"), header=T, stringsAsFactors = F, check.names = F)
-combine5=read.delim(paste0(path_fig3_data,"isoform.switch.550.hit.isoform.alone.tsv.gz"), header=T, stringsAsFactors = F, check.names = F)                   
+combine2=read.delim(paste0(path_fig3_data,"isoform.switch.transcript.1192.tsv.gz"), header=T, stringsAsFactors = F, check.names = F)
+combine5=read.delim(paste0(path_fig3_data,"isoform.switch.534.hit.isoform.alone.tsv.gz"), header=T, stringsAsFactors = F, check.names = F)                   
 ex5_ATACcount=read.delim(paste0(path_fig3_data,"ex5cluster_ATACcount_celltype.tsv.gz"), header=T, stringsAsFactors = F, check.names = F)
 colnames(ex5_ATACcount)[c(6:8)]=paste0("ex5_",colnames(ex5_ATACcount)[c(6:8)])
 ex5_ATACcount$ex5_ATAC_CPM_iPSC=ex5_ATACcount$ex5_ATACcount_iPSC/sum(ex5_ATACcount$ex5_ATACcount_iPSC)*1000000
@@ -532,8 +532,8 @@ combine5=left_join(combine5, shortkallisto[,c(1,8:10)] ,by=c("isoform_id"="targe
 combine5=combine5[,c(1:3,54:56,4:53)]
 colnames(combine5)[c(1:6)]=c("iPSC_CPM_longread","NSC_CPM_longread","Neuron_CPM_longread","iPSC_TPM_shortread","NSC_TPM_shortread","Neuron_TPM_shortread")
 
-write.table(combine2, gzfile(paste0(path_fig3_data,"isoform.switch.transcript.1279.tsv.gz")), col.names=T, row.names=F, sep="\t", quote=F)
-write.table(combine5, gzfile(paste0(path_fig3_data,"isoform.switch.550.hit.isoform.alone.tsv.gz")), col.names=T, row.names=F, sep="\t", quote=F)
+write.table(combine2, gzfile(paste0(path_fig3_data,"isoform.switch.transcript.1192.tsv.gz")), col.names=T, row.names=F, sep="\t", quote=F)
+write.table(combine5, gzfile(paste0(path_fig3_data,"isoform.switch.534.hit.isoform.alone.tsv.gz")), col.names=T, row.names=F, sep="\t", quote=F)
 write.table(combine2, paste0(primary_folder,"/supplementary_table/TableS9_isoform.switch.tsv"), col.names=T, row.names=F, sep="\t", quote=F)
 
 #stored in [primary_folder]/fig3/data

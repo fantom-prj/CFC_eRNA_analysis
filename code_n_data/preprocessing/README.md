@@ -50,7 +50,7 @@ The trimmed and orientated reads were then mapped to the human reference genome 
 
 # <a name="SJ"></a>Confident splice junctions from short-read RNA-seq
 
-To obtain confident splice junction file (SJ.out.tab), all the fastq files of the short-read RNA-seq were combined into read1 and read2 fastq files and subjected to STAR for genome mapping using hg38 GENCODE v39 as reference.
+To obtain a confident splice junction file (SJ.out.tab), all the fastq files of the short-read RNA-seq were combined into read1 and read2 fastq files and subjected to STAR for genome mapping using hg38 GENCODE v39 as reference.
 ```
 [1] zcat *_R1_*.fastq.gz | gzip > all_reads_R1.fastq.gz
 [2] zcat *_R2_*.fastq.gz | gzip > all_reads_R2.fastq.gz

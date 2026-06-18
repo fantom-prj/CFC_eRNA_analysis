@@ -187,9 +187,9 @@ intron=intron[order(intron$V1,as.numeric(intron$V2)),]
 
 write.table(SS3p[,c(1,2,3,5,5,4)],gzfile(paste0(SJ_path,"all_ontCAGE.SS3J.count.bed.gz")), col.names=F, row.names=F, sep="\t", quote=F)
 write.table(SS5p[,c(1,2,3,5,5,4)],gzfile(paste0(SJ_path,"all_ontCAGE.SS5J.count.bed.gz")), col.names=F, row.names=F, sep="\t", quote=F)
-write.table(label,paste0(SJ_path,"all_ontCAGE.intronID_SS5J_SS3J.label.tsv"), col.names=T, row.names=F, sep="\t", quote=F)
+write.table(label,gzfile(paste0(SJ_path,"all_ontCAGE.intronID_SS5J_SS3J.label.tsv.gz")), col.names=T, row.names=F, sep="\t", quote=F)
 write.table(intron[,c(3,4,5,1,2,6)], gzfile(paste0(SJ_path,"all_ontCAGE.intron.for.zenbu.bed.gz")), col.names=F, row.names=F, sep="\t", quote=F)
-label=read.delim(paste0(SJ_path,"all_ontCAGE.intronID_SS5J_SS3J.label.tsv"), header=T, stringsAsFactors = F, check.names = F)
+label=read.delim(paste0(SJ_path,"all_ontCAGE.intronID_SS5J_SS3J.label.tsv.gz"), header=T, stringsAsFactors = F, check.names = F)
 #======================================================
 #bash
 #bedtools intersect
@@ -224,7 +224,7 @@ colnames(eff)[c(4,5)]=c("splice","span")
 eff$eff=eff$splice/(eff$span+eff$splice)
 eff$ID=paste0(eff$V1,"_",eff$V2,"_",eff$V3,"_",eff$V6)
 length(which(eff$eff == 1))/nrow(eff) #0.2182673
-write.table(eff,paste0(SJ_path,"all_ontCAGE.SS5J.splice.span.eff.tsv"),col.names=T, row.names=F, sep="\t", quote=F)
+write.table(eff,gzfile(paste0(SJ_path,"all_ontCAGE.SS5J.splice.span.eff.tsv.gz")),col.names=T, row.names=F, sep="\t", quote=F)
 
 
 #=================
@@ -258,7 +258,7 @@ SS3p=SS3p[order(SS3p$chrom, SS3p$V3a),]
 SS5p=SS5p[order(SS5p$chrom, SS5p$V2),]
 write.table(SS3p,gzfile(paste0(SJ_path,"all_ontCAGE.SS3J.count.bed.gz")), col.names=F, row.names=F, sep="\t", quote=F)
 write.table(SS5p,gzfile(paste0(SJ_path,"all_ontCAGE.SS5J.count.bed.gz")), col.names=F, row.names=F, sep="\t", quote=F)
-write.table(label,paste0(SJ_path,"all_ontCAGE.intronID_SS5J_SS3J.label.tsv"), col.names=T, row.names=F, sep="\t", quote=F)
+write.table(label,gzfile(paste0(SJ_path,"all_ontCAGE.intronID_SS5J_SS3J.label.tsv.gz")), col.names=T, row.names=F, sep="\t", quote=F)
 
 junction_info_TC=left_join(junction_info_TC[,c(1:10)], label, by="intron_ID")
 junction_info_TC=left_join(junction_info_TC,junction_info[,c(1,8:13)],by=c("intron_ID"="junct_ID"),copy=F)

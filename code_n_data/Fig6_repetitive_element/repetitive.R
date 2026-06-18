@@ -687,7 +687,7 @@ write.table(data5,gzfile(paste0(path_fig6_data,"LTR_ex5_cluster_ATAC_CPM.tsv.gz"
 #for -> fig 6i
 
 #===============================================================================
-# prepare supp Table S19
+# prepare supp Table S18
 data1=read.delim(paste0(primary_folder,"fig4/data/features_by_ex5cluster.tsv.gz"), header=T, stringsAsFactors = F, check.names = F)
 table5=read.delim(paste0(primary_folder,"code_n_data/SALA/Neuron_THP1_full/transcript/log/table5.chimeric.194K.remove.permissive.isoform.tsv.gz"),header=T, stringsAsFactors = F, check.names=F)
 table5ee=table5[which(table5$ex5cluster_class == "e_ncRNA"),]
