@@ -217,7 +217,7 @@ both2%>%group_by(group1,group2,group3)%>%dplyr::summarise(depleted=length(which(
 both2$id=sapply(strsplit(both2$id,"\\("),"[",1)
 
 table5b=read.delim(paste0(CGI_path,"TESID_restricted_to_n3_string.tsv.gz"), header=T, stringsAsFactors = F, check.names = F)
-both2=left_join(both2, table5b[,c(1,4,6,5,8:13)], by=c("id"="TESID"),copy=F)
+both2=left_join(both2, table5b[,c(1,4,6,5,8:14)], by=c("id"="TESID"),copy=F)
 
 write.table(both2,gzfile(paste0(path_fig5_data,"eRNA_structural_depleteion.raw.tsv.gz")), col.names=T, row.names=F, sep="\t", quote=F)
 both2=read.delim(paste0(path_fig5_data,"eRNA_structural_depleteion.raw.tsv.gz"), header=T, stringsAsFactors = F, check.names = F)

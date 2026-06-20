@@ -23,7 +23,6 @@ library("scales")
 show_col(mypal)
 
 #####################
-setwd("/analysisdata/fantom6/Interactome/ONT.CAGE.satellite/dorado_run/Figure/Fig1")
 
 #primary_folder=[primary_folder]
 primary_folder="/osc-fs_home/yip/CFC_seq_paper_fig_data/"
