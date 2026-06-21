@@ -54,54 +54,6 @@ Long-read sequencing has transformed transcriptome profiling, yet capturing full
 
 
 
-| Method | Code |
-|---------|------|
-| Pre-processing of ONT Long-Read Data | [Link](https://github.com/fantom-prj/CFC_eRNA_analysis/tree/main/code_n_data/preprocessing) |
-| Genome Mapping and TranscriptClean Processing | [Link](path/to/code) |
-| Comparative Analysis of Long-Read 5′ End Precision | [Link](path/to/code) |
-| 3′ End Assessment and Internal Priming Filtering | [Link](path/to/code) |
-| PAS Motif Identification and Hierarchical Scoring | [Link](path/to/code) |
-| Detection of Non-poly(A) ncRNAs and Incomplete PAT Transcripts | [Link](path/to/code) |
-| Poly(A) Tail Prediction | [Link](path/to/code) |
-| High-Confidence Splice Junction Identification | [Link](path/to/code) |
-| TSS Cluster and tCRE Identification Using SCAFE | [Link](path/to/code) |
-| Promoter Classification | [Link](path/to/code) |
-| Comparison of CFC-seq and CAGE for TSS and tCRE Detection | [Link](path/to/code) |
-| Mappability Analysis of Repetitive Elements | [Link](path/to/code) |
-| Transcript Model Construction Using SALA | [Link](path/to/code) |
-| Coding Potential Prediction | [Link](path/to/code) |
-| lncRNA Transcript and Gene Classification | [Link](path/to/code) |
-| Transcript Model Construction Using TALON | [Link](path/to/code) |
-| Transcript Model Construction Using IsoQuant | [Link](path/to/code) |
-| Construction of Reference and Custom GTF Files | [Link](path/to/code) |
-| SALA Annotation of Chromatin-Bound iPSC Data | [Link](path/to/code) |
-| Short-Read RNA-seq Analysis | [Link](path/to/code) |
-| Quantification of CFC-seq Samples | [Link](path/to/code) |
-| Comparison with Reference Transcriptome Repositories | [Link](path/to/code) |
-| Comparison Across Transcriptome Assemblers | [Link](path/to/code) |
-| Isoform Switching Analysis | [Link](path/to/code) |
-| Integration of Genomic Features into tCREs and ex5 Clusters | [Link](path/to/code) |
-| Analysis of tCRE Bidirectionality | [Link](path/to/code) |
-| Super Enhancer Identification | [Link](path/to/code) |
-| Histone Modification Integration | [Link](path/to/code) |
-| Classification of ex5 Clusters, Transcripts, and Genes | [Link](path/to/code) |
-| Transcriptional Property Analysis | [Link](path/to/code) |
-| Exosome Sensitivity Analysis | [Link](path/to/code) |
-| RNA-Binding Protein Interaction Analysis | [Link](path/to/code) |
-| Splicing Efficiency and SpliceAI Analysis | [Link](path/to/code) |
-| RNA Structure Prediction Near Transcript Ends | [Link](path/to/code) |
-| Genomic and Regulatory Characterization of TESs | [Link](path/to/code) |
-| eQTL and GWAS SNP Analysis in the Expanded Transcriptome | [Link](path/to/code) |
-| Enrichment Analysis of GWAS and eQTL SNPs in Enhancers | [Link](path/to/code) |
-| Hi-C Experimental and Computational Analysis | [Link](path/to/code) |
-| Chromatin Connectivity Analysis | [Link](path/to/code) |
-| Chromatin Accessibility and GC Content Analysis | [Link](path/to/code) |
-| Enhancer–Gene Interaction Prediction Using ABC | [Link](path/to/code) |
-| Repeat Element Analysis in ex5 Clusters and Transcript Models | [Link](path/to/code) |
-| Transcription Factor Motif Enrichment Analysis | [Link](path/to/code) |
-| Integration of NFYB and TEAD4 ChIP-seq Data | [Link](path/to/code) |
-
-
 ## Software and Tools
 
 | Tool | Source |
@@ -185,6 +137,58 @@ Long-read sequencing has transformed transcriptome profiling, yet capturing full
 | POSTAR3 RNA–protein interactions | http://111.198.139.65/ |
 | HipSTR short tandem repeat annotations | https://github.com/HipSTR-Tool/HipSTR |
 | EVLncRNAs 3.0 | https://www.sdklab-biophysics-dzu.net/EVLncRNAs3/#/ |
+
+## References
+1.	Yip, C. W. et al. Antisense-oligonucleotide-mediated perturbation of long non-coding RNA reveals functional features in stem cells and across cell types. Cell Rep. 41, 111893 (2022).
+2.	Takahashi, H., Lassmann, T., Murata, M. & Carninci, P. 5′ end–centered expression profiling using cap-analysis gene expression and next-generation sequencing. Nat. Protoc. 7, 542–561 (2012).
+3.	Takahashi, H., Nishiyori-Sueki, H., Ramilowski, J. A., Itoh, M. & Carninci, P. Low Quantity Single Strand CAGE (LQ-ssCAGE) Maps Regulatory Enhancers and Promoters. Methods Mol. Biol. Clifton NJ 2351, 67–90 (2021).
+4.	Li, H. Minimap2: pairwise alignment for nucleotide sequences. Bioinforma. Oxf. Engl. 34, 3094–3100 (2018).
+5.	Wyman, D. & Mortazavi, A. TranscriptClean: variant-aware correction of indels, mismatches and splice junctions in long-read transcripts. Bioinforma. Oxf. Engl. 35, 340–342 (2019).
+6.	Wyman, D. et al. A Technology-Agnostic Long-Read Analysis Pipeline for Transcriptome Discovery and Quantification. http://biorxiv.org/lookup/doi/10.1101/672931 (2019) doi:10.1101/672931.
+7.	Pardo-Palacios, F. J. et al. Systematic assessment of long-read RNA-seq methods for transcript identification and quantification. Nat. Methods https://doi.org/10.1038/s41592-024-02298-3 (2024) doi:10.1038/s41592-024-02298-3.
+8.	Heinz, S. et al. Simple combinations of lineage-determining transcription factors prime cis-regulatory elements required for macrophage and B cell identities. Mol. Cell 38, 576–589 (2010).
+9.	Legnini, I., Alles, J., Karaiskos, N., Ayoub, S. & Rajewsky, N. FLAM-seq: full-length mRNA sequencing reveals principles of poly(A) tail length control. Nat. Methods 16, 879–886 (2019).
+10.	Alfonso-Gonzalez, C. et al. Sites of transcription initiation drive mRNA isoform selection. Cell 186, 2438-2455.e22 (2023).
+11.	Moody, J. et al. SCAFE: a software suite for analysis of transcribed cis-regulatory elements in single cells. Bioinforma. Oxf. Engl. 38, 5126–5128 (2022).
+12.	Dobin, A. et al. STAR: ultrafast universal RNA-seq aligner. Bioinforma. Oxf. Engl. 29, 15–21 (2013).
+13.	Willems, T. et al. Genome-wide profiling of heritable and de novo STR variations. Nat. Methods 14, 590–592 (2017).
+14.	The human RNA-DNA interactome is cell type-specific and dynamic. (2026).
+15.	Wang, L. et al. CPAT: Coding-Potential Assessment Tool using an alignment-free logistic regression model. Nucleic Acids Res. 41, e74–e74 (2013).
+16.	Prjibelski, A. D. et al. Accurate isoform discovery with IsoQuant using long reads. Nat. Biotechnol. 41, 915–918 (2023).
+17.	Bray, N. L., Pimentel, H., Melsted, P. & Pachter, L. Near-optimal probabilistic RNA-seq quantification. Nat. Biotechnol. 34, 525–527 (2016).
+18.	Chen, Y. et al. Context-aware transcript quantification from long-read RNA-seq data with Bambu. Nat. Methods 20, 1187–1195 (2023).
+19.	Zhao, W. et al. POSTAR3: an updated platform for exploring post-transcriptional regulation coordinated by RNA-binding proteins. Nucleic Acids Res. 50, D287–D294 (2022).
+20.	Vitting-Seerup, K. & Sandelin, A. The Landscape of Isoform Switches in Human Cancers. Mol. Cancer Res. MCR 15, 1206–1220 (2017).
+21.	Hnisz, D. et al. Super-enhancers in the control of cell identity and disease. Cell 155, 934–947 (2013).
+22.	Chapuy, B. et al. Discovery and characterization of super-enhancer-associated dependencies in diffuse large B cell lymphoma. Cancer Cell 24, 777–790 (2013).
+23.	Wang, Y. et al. SEdb 2.0: a comprehensive super-enhancer database of human and mouse. Nucleic Acids Res. 51, D280–D290 (2023).
+24.	Yip, C. W. et al. Single cell bimodal analyses reveal the mode of activity of transcription factors on enhancers and promoters. Prep. In preparation, (2026).
+25.	Lovén, J. et al. Selective inhibition of tumor oncogenes by disruption of super-enhancers. Cell 153, 320–334 (2013).
+26.	Whyte, W. A. et al. Master transcription factors and mediator establish super-enhancers at key cell identity genes. Cell 153, 307–319 (2013).
+27.	Ernst, J. & Kellis, M. ChromHMM: automating chromatin-state discovery and characterization. Nat. Methods 9, 215–216 (2012).
+28.	Jaganathan, K. et al. Predicting Splicing from Primary Sequence with Deep Learning. Cell 176, 535-548.e24 (2019).
+29.	Lorenz, R. et al. ViennaRNA Package 2.0. Algorithms Mol. Biol. 6, 26 (2011).
+30.	Kerimov, N. et al. eQTL Catalogue: A Compendium of Uniformly Processed Human Gene Expression and Splicing QTLs. http://biorxiv.org/lookup/doi/10.1101/2020.01.29.924266 (2020) doi:10.1101/2020.01.29.924266.
+31.	Wang, J. et al. CAUSALdb: a database for disease/trait causal variants identified using summary statistics of genome-wide association studies. Nucleic Acids Res. gkz1026 (2019) doi:10.1093/nar/gkz1026.
+32.	Mifsud, B. et al. GOTHiC, a probabilistic model to resolve complex biases and to identify real interactions in Hi-C data. PloS One 12, e0174744 (2017).
+33.	Fulco, C. P. et al. Activity-by-contact model of enhancer–promoter regulation from thousands of CRISPR perturbations. Nat. Genet. 51, 1664–1669 (2019).
+34.	Bailey, T. L. & Grant, C. E. SEA: Simple Enrichment Analysis of motifs. Preprint at https://doi.org/10.1101/2021.08.23.457422 (2021).
+35.	The ENCODE Project Consortium et al. Expanded encyclopaedias of DNA elements in the human and mouse genomes. Nature 583, 699–710 (2020).
+36.	Nellore, A. et al. Human splicing diversity and the extent of unannotated splice junctions across human RNA-seq samples on the Sequence Read Archive. Genome Biol. 17, 266 (2016).
+37.	Koscielny, G. et al. Open Targets: a platform for therapeutic target identification and validation. Nucleic Acids Res. 45, D985–D994 (2017).
+38.	Zhou, B. et al. EVLncRNAs 3.0: an updated comprehensive database for manually curated functional long non-coding RNAs validated by low-throughput experiments. Nucleic Acids Res. 52, D98–D106 (2024).
+39.	Dobin, A. et al. STAR: ultrafast universal RNA-seq aligner. Bioinforma. Oxf. Engl. 29, 15–21 (2013).
+40.	Pardo-Palacios, F. J. et al. SQANTI3: curation of long-read transcriptomes for accurate identification of known and novel isoforms. Nat. Methods 21, 793–797 (2024).
+41.	Langmead, B. & Salzberg, S. L. Fast gapped-read alignment with Bowtie 2. Nat. Methods 9, 357–359 (2012).
+42.	Zhang, Y. et al. Model-based Analysis of ChIP-Seq (MACS). Genome Biol. 9, R137 (2008).
+43.	Lorenz, R. et al. ViennaRNA Package 2.0. Algorithms Mol. Biol. 6, 26 (2011).
+44.	Frith, M. C. et al. A code for transcription initiation in mammalian genomes. Genome Res. 18, 1–12 (2008).
+45.	Danecek, P. et al. Twelve years of SAMtools and BCFtools. GigaScience 10, giab008 (2021).
+46.	Quinlan, A. R. & Hall, I. M. BEDTools: a flexible suite of utilities for comparing genomic features. Bioinforma. Oxf. Engl. 26, 841–842 (2010).
+47.	Li, H. Tabix: fast retrieval of sequence features from generic TAB-delimited files. Bioinformatics 27, 718–719 (2011).
+48.	Kent, W. J. et al. The human genome browser at UCSC. Genome Res. 12, 996–1006 (2002).
+49.	Leonardi, T. Bedparse: feature extraction from BED files. J. Open Source Softw. 4, 1228 (2019).
+50.	R Core Team. R: A language and environment for statistical computing. (2021).
 
 
 
